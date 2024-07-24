@@ -1,0 +1,4 @@
+max_width = 100 # Maximum width of each line
+# hard_tabs = true # Use spaces instead of tabs
+tab_spaces = 4 # Number of spaces per tab
+newline_style = "Unix" # Newline style, options: "Unix", "Windows"

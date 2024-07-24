@@ -3,6 +3,8 @@ use std::time::Duration;
 
 use clap::{command, Parser};
 
+mod ball_event;
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
@@ -20,7 +22,7 @@ fn main() {
     let baud_rate = args.baud;
 
     let port = serialport::new(&port_name, baud_rate)
-        .timeout(Duration::from_millis(10))
+        .timeout(Duration::from_millis(10_000))
         .open();
 
     match port {
@@ -30,6 +32,12 @@ fn main() {
             loop {
                 match port.read(serial_buf.as_mut_slice()) {
                     Ok(t) => {
+                        let data = String::from_utf8_lossy(&serial_buf[..t]);
+                        if data.starts_with("CT") {
+                            let ball_event = ball_event::BallEvent::from_data_line(&data);
+                            println!("{:?}", ball_event);
+                        }
+
                         io::stdout().write_all(&serial_buf[..t]).unwrap();
                         io::stdout().flush().unwrap();
                     }

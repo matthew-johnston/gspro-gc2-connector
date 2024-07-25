@@ -6,7 +6,6 @@ use log::{error, info};
 use spin_sleep::native_sleep;
 
 mod ball_data;
-mod ball_event;
 mod data_line;
 mod gs_pro;
 

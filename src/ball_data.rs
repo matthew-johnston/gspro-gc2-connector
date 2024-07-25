@@ -81,6 +81,8 @@ impl ShotDataOptions {
     }
 }
 
+// CT=1259299,SN=2638,HW=3,SW=4.0.0,ID=2,TM=1259299,SP=8.39,AZ=-6.08,EL=18.88,TS=800.00,SS=-125.00,BS=790.00,CY=0.95,TL=0.95,SM=0.00,HMT=0
+
 impl From<DataLine> for BallData {
     fn from(data_line: DataLine) -> BallData {
         BallData {
@@ -89,14 +91,14 @@ impl From<DataLine> for BallData {
             ShotNumber: data_line.id,
             APIversion: "1".to_owned(),
             BallData: BallDetails {
-                Speed: data_line.SP,
+                Speed: data_line.sp,
                 SpinAxis: data_line.AZ,
-                TotalSpin: data_line.EL,
-                BackSpin: Some(data_line.TS),
-                SideSpin: Some(data_line.SS),
+                TotalSpin: data_line.ts,
+                BackSpin: Some(data_line.bs),
+                SideSpin: Some(data_line.ss),
                 HLA: data_line.BS,
                 VLA: data_line.CY,
-                CarryDistance: Some(data_line.TL),
+                CarryDistance: Some(data_line.cy),
             },
             ClubData: ClubDetails::new(),
             ShotDataOptions: ShotDataOptions::new(),

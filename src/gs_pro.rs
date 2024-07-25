@@ -3,7 +3,7 @@
 use std::{
     io::{self, Read, Write},
     net::TcpStream,
-    sync::mpsc::{Receiver, Sender},
+    sync::mpsc::Receiver,
     thread,
     time::Duration,
 };
@@ -17,14 +17,20 @@ use crate::ball_event::BallEvent;
 pub fn gspro_connect(ip: &str, port: &str, receiver: Receiver<BallEvent>) {
     let address = format!("{}:{}", ip, port);
 
-    handle_connect(address, port, receiver);
+    // Keep attempting to connect to the server
+    loop {
+        handle_connect(&address, &receiver);
+
+        // Sleep for a short duration to avoid high CPU usage
+        native_sleep(Duration::from_secs(5));
+    }
 }
 
-fn handle_connect(address: String, port: &str, receiver: Receiver<BallEvent>) {
+fn handle_connect(address: &String, receiver: &Receiver<BallEvent>) {
     // Attempt to connect to the server
     match TcpStream::connect(address) {
         Ok(mut stream) => {
-            println!("Successfully connected to server in port {}", port);
+            info!("Successfully connected to server {}", address);
 
             // Set the stream to non-blocking mode to handle read/write operations properly
             stream
@@ -33,18 +39,23 @@ fn handle_connect(address: String, port: &str, receiver: Receiver<BallEvent>) {
 
             // Spawn a thread to handle reading from the stream
             let read_stream = stream.try_clone().expect("Failed to clone stream");
-            thread::spawn(move || {
+            let read_thread_handle = thread::spawn(move || {
                 handle_read(read_stream);
             });
 
             // Main loop to handle writing to the stream
             loop {
+                // Check if the read thread has finished, if so, break the loop
+                if read_thread_handle.is_finished() {
+                    break;
+                }
+
                 if let Ok(ball_event) = receiver.try_recv() {
                     // Convert the ball event to a string or bytes to send to the server
                     let message = format!("Event data: {:?}", ball_event); // Placeholder for actual serialization
                     if let Err(e) = stream.write_all(message.as_bytes()) {
-                        println!("Failed to write to server: {}", e);
-                        break;
+                        error!("Failed to write to server: {}", e);
+                        //break;
                     }
                 }
 

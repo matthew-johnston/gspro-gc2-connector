@@ -1,10 +1,10 @@
-use std::io::{self, Write};
-
+use std::io::{self};
 use std::{sync::mpsc::channel, thread, time::Duration};
 
 use ball_event::BallEvent;
 use clap::{command, Parser};
 use log::{error, info};
+use spin_sleep::native_sleep;
 
 mod ball_event;
 mod gs_pro;
@@ -12,16 +12,16 @@ mod gs_pro;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
+    #[arg(long)]
     com_port: String,
 
-    #[arg(short, long, default_value_t = 115_200)]
+    #[arg(long, default_value_t = 115_200)]
     com_baud: u32,
 
-    #[arg(short, long)]
+    #[arg(long)]
     gs_pro_ip: String,
 
-    #[arg(short, long, default_value = "0921")]
+    #[arg(long, default_value = "0921")]
     gs_pro_port: String,
 }
 
@@ -29,8 +29,6 @@ fn main() {
     env_logger::init();
 
     let args = Args::parse();
-    let port_name = args.com_port;
-    let baud_rate = args.com_baud;
 
     let (sender, receiver) = channel::<BallEvent>();
 
@@ -39,10 +37,13 @@ fn main() {
         gs_pro::gspro_connect(&args.gs_pro_ip, &args.gs_pro_port, receiver);
     });
 
-    let mut port = open_serial_port(&port_name, baud_rate);
+    let mut port = open_serial_port(&args.com_port, args.com_baud);
 
     let mut serial_buf: Vec<u8> = vec![0; 1000];
-    info!("Receiving data on {} at {} baud:", &port_name, &baud_rate);
+    info!(
+        "Receiving data on {} at {} baud:",
+        &args.com_port, &args.com_baud
+    );
 
     loop {
         match port.read(serial_buf.as_mut_slice()) {
@@ -56,9 +57,6 @@ fn main() {
                 }
 
                 info!("{}", data);
-
-                // io::stdout().write_all(&serial_buf[..t]).unwrap();
-                // io::stdout().flush().unwrap();
             }
             Err(ref e) if e.kind() == io::ErrorKind::TimedOut => (),
             Err(e) => error!("{:?}", e),
@@ -77,11 +75,11 @@ fn open_serial_port(port_name: &str, baud_rate: u32) -> Box<dyn serialport::Seri
         {
             Ok(p) => return p,
             Err(e) => {
-                // TODO: Prevent log spam if the port is not available (or incorrect port)
-
                 error!("Failed to open \"{}\". Error: {}", port_name, e);
-                // ::std::process::exit(1);
             }
         }
+
+        // Sleep for a short duration to avoid high CPU usage
+        native_sleep(Duration::from_millis(100));
     }
 }

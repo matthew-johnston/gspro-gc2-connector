@@ -17,29 +17,29 @@ pub struct BallData {
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(non_snake_case)]
 pub struct BallDetails {
-    Speed: f64,
-    SpinAxis: f64,
-    TotalSpin: f64,
-    BackSpin: Option<f64>,
-    SideSpin: Option<f64>,
-    HLA: f64,
-    VLA: f64,
-    CarryDistance: Option<f64>,
+    Speed: f32,
+    SpinAxis: f32,
+    TotalSpin: f32,
+    BackSpin: Option<f32>,
+    SideSpin: Option<f32>,
+    HLA: f32,
+    VLA: f32,
+    CarryDistance: Option<f32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[allow(non_snake_case)]
 pub struct ClubDetails {
-    Speed: f64,
-    AngleOfAttack: f64,
-    FaceToTarget: f64,
-    Lie: f64,
-    Loft: f64,
-    Path: f64,
-    SpeedAtImpact: f64,
-    VerticalFaceImpact: f64,
-    HorizontalFaceImpact: f64,
-    ClosureRate: f64,
+    Speed: f32,
+    AngleOfAttack: f32,
+    FaceToTarget: f32,
+    Lie: f32,
+    Loft: f32,
+    Path: f32,
+    SpeedAtImpact: f32,
+    VerticalFaceImpact: f32,
+    HorizontalFaceImpact: f32,
+    ClosureRate: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -92,7 +92,7 @@ impl From<DataLine> for BallData {
             APIversion: "1".to_owned(),
             BallData: BallDetails {
                 Speed: data_line.sp,
-                SpinAxis: data_line.AZ,
+                SpinAxis: calculate_spin_axis(data_line.ss, data_line.bs),
                 TotalSpin: data_line.ts,
                 BackSpin: Some(data_line.bs),
                 SideSpin: Some(data_line.ss),
@@ -104,4 +104,22 @@ impl From<DataLine> for BallData {
             ShotDataOptions: ShotDataOptions::new(),
         }
     }
+}
+
+fn calculate_spin_axis(side_spin: f32, back_spin: f32) -> f32 {
+    if back_spin == 0.0 {
+        // Handle the case where back_spin is 0 to avoid division by zero.
+        // Returning 90.0 or -90.0 degrees based on the side_spin sign,
+        // indicating a purely horizontal spin axis.
+        return if side_spin >= 0.0 { 90.0 } else { -90.0 };
+    }
+
+    // Calculate the angle in radians
+    let angle_radians = (side_spin / back_spin).atan();
+
+    // Convert the angle to degrees
+    let angle_degrees = angle_radians.to_degrees();
+
+    // Return the calculated angle
+    angle_degrees
 }

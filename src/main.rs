@@ -53,20 +53,9 @@ fn main() {
                     if let Some(data_line) = data_line::DataLine::from_line(&data) {
                         let ball_event = ball_data::BallData::from(data_line);
                         sender.send(ball_event).unwrap();
-
-                        // let ball_event = ball_event::BallEvent::from_data_line(&data_line);
-                        // if let Some(ball_event) = ball_event {
-                        //     sender.send(ball_event).unwrap();
-                        // }
                     }
-
-                    // let ball_event = ball_event::BallEvent::from_data_line(&data);
-                    // if let Some(ball_event) = ball_event {
-                    //     sender.send(ball_event).unwrap();
-                    // }
+                    info!("{}", data);
                 }
-
-                info!("{}", data);
             }
             Err(ref e) if e.kind() == io::ErrorKind::TimedOut => (),
             Err(e) => error!("{:?}", e),

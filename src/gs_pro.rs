@@ -1,0 +1,86 @@
+// https://gsprogolf.com/GSProConnectV1.html
+
+use std::{
+    io::{self, Read, Write},
+    net::TcpStream,
+    sync::mpsc::{Receiver, Sender},
+    thread,
+    time::Duration,
+};
+
+use log::{error, info};
+use spin_sleep::native_sleep;
+
+use crate::ball_event::BallEvent;
+
+// Function to handle the connection to the server
+pub fn gspro_connect(ip: &str, port: &str, receiver: Receiver<BallEvent>) {
+    let address = format!("{}:{}", ip, port);
+
+    handle_connect(address, port, receiver);
+}
+
+fn handle_connect(address: String, port: &str, receiver: Receiver<BallEvent>) {
+    // Attempt to connect to the server
+    match TcpStream::connect(address) {
+        Ok(mut stream) => {
+            println!("Successfully connected to server in port {}", port);
+
+            // Set the stream to non-blocking mode to handle read/write operations properly
+            stream
+                .set_nonblocking(true)
+                .expect("Failed to initiate non-blocking");
+
+            // Spawn a thread to handle reading from the stream
+            let read_stream = stream.try_clone().expect("Failed to clone stream");
+            thread::spawn(move || {
+                handle_read(read_stream);
+            });
+
+            // Main loop to handle writing to the stream
+            loop {
+                if let Ok(ball_event) = receiver.try_recv() {
+                    // Convert the ball event to a string or bytes to send to the server
+                    let message = format!("Event data: {:?}", ball_event); // Placeholder for actual serialization
+                    if let Err(e) = stream.write_all(message.as_bytes()) {
+                        println!("Failed to write to server: {}", e);
+                        break;
+                    }
+                }
+
+                // Sleep for a short duration to avoid high CPU usage
+                native_sleep(Duration::from_millis(100));
+            }
+        }
+        Err(e) => {
+            error!("Failed to connect: {}", e);
+        }
+    }
+}
+
+// Function to handle reading from the stream
+fn handle_read(mut stream: TcpStream) {
+    let mut buf = [0; 1024];
+    loop {
+        match stream.read(&mut buf) {
+            Ok(0) => {
+                // Connection was closed
+                info!("Connection closed by server");
+                break;
+            }
+            Ok(t) => {
+                // Handle the data received from the server
+                let data = String::from_utf8_lossy(&buf[..t]);
+                info!("Received: {}", data);
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                // No data available yet, so wait for a short duration
+                thread::sleep(Duration::from_millis(100));
+            }
+            Err(e) => {
+                error!("Failed to read from server: {}", e);
+                break;
+            }
+        }
+    }
+}

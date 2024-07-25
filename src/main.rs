@@ -1,13 +1,13 @@
 use std::io::{self};
 use std::{sync::mpsc::channel, thread, time::Duration};
 
-use ball_event::BallEvent;
 use clap::{command, Parser};
 use log::{error, info};
 use spin_sleep::native_sleep;
 
 mod ball_data;
 mod ball_event;
+mod data_line;
 mod gs_pro;
 
 #[derive(Parser, Debug)]
@@ -31,7 +31,7 @@ fn main() {
 
     let args = Args::parse();
 
-    let (sender, receiver) = channel::<BallEvent>();
+    let (sender, receiver) = channel::<ball_data::BallData>();
 
     // Separate thread for the gspro connection. This will be used to send the ball events to the server.
     thread::spawn(move || {
@@ -51,10 +51,20 @@ fn main() {
             Ok(t) => {
                 let data = String::from_utf8_lossy(&serial_buf[..t]);
                 if data.starts_with("CT") {
-                    let ball_event = ball_event::BallEvent::from_data_line(&data);
-                    if let Some(ball_event) = ball_event {
+                    if let Some(data_line) = data_line::DataLine::from_line(&data) {
+                        let ball_event = ball_data::BallData::from(data_line);
                         sender.send(ball_event).unwrap();
+
+                        // let ball_event = ball_event::BallEvent::from_data_line(&data_line);
+                        // if let Some(ball_event) = ball_event {
+                        //     sender.send(ball_event).unwrap();
+                        // }
                     }
+
+                    // let ball_event = ball_event::BallEvent::from_data_line(&data);
+                    // if let Some(ball_event) = ball_event {
+                    //     sender.send(ball_event).unwrap();
+                    // }
                 }
 
                 info!("{}", data);

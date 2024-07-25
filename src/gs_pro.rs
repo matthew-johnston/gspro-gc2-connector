@@ -11,10 +11,10 @@ use std::{
 use log::{error, info};
 use spin_sleep::native_sleep;
 
-use crate::ball_event::BallEvent;
+use crate::ball_data::BallData;
 
 // Function to handle the connection to the server
-pub fn gspro_connect(ip: &str, port: &str, receiver: Receiver<BallEvent>) {
+pub fn gspro_connect(ip: &str, port: &str, receiver: Receiver<BallData>) {
     let address = format!("{}:{}", ip, port);
 
     // Keep attempting to connect to the server
@@ -26,7 +26,7 @@ pub fn gspro_connect(ip: &str, port: &str, receiver: Receiver<BallEvent>) {
     }
 }
 
-fn handle_connect(address: &String, receiver: &Receiver<BallEvent>) {
+fn handle_connect(address: &String, receiver: &Receiver<BallData>) {
     // Attempt to connect to the server
     match TcpStream::connect(address) {
         Ok(mut stream) => {

@@ -47,9 +47,9 @@ pub struct ClubDetails {
 pub struct ShotDataOptions {
     ContainsBallData: bool, // Hard coded to true
     ContainsClubData: bool, // Hard coded to false
-    LaunchMonitorIsReady: Option<bool>,
-    LaunchMonitorBallDetected: Option<bool>,
-    IsHeartBeat: Option<bool>,
+    LaunchMonitorIsReady: bool,
+    LaunchMonitorBallDetected: bool,
+    IsHeartBeat: bool,
 }
 
 impl ClubDetails {
@@ -74,9 +74,9 @@ impl ShotDataOptions {
         ShotDataOptions {
             ContainsBallData: true,
             ContainsClubData: false,
-            LaunchMonitorIsReady: None,
-            LaunchMonitorBallDetected: None,
-            IsHeartBeat: None,
+            LaunchMonitorIsReady: true,
+            LaunchMonitorBallDetected: true,
+            IsHeartBeat: false,
         }
     }
 }

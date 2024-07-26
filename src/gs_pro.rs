@@ -51,11 +51,14 @@ fn handle_connect(address: &String, receiver: &Receiver<BallData>) {
                 }
 
                 if let Ok(ball_event) = receiver.try_recv() {
-                    // Convert the ball event to a string or bytes to send to the server
-                    let message = format!("Event data: {:?}", ball_event); // Placeholder for actual serialization
-                    if let Err(e) = stream.write_all(message.as_bytes()) {
-                        error!("Failed to write to server: {}", e);
-                        //break;
+                    // Convert the ball event to a json string to send to the server
+                    if let Ok(ball_json) = serde_json::to_string(&ball_event) {
+                        info!("Sending: {}", ball_json);
+
+                        if let Err(e) = stream.write_all(ball_json.as_bytes()) {
+                            error!("Failed to write to server: {}", e);
+                            //break;
+                        }
                     }
                 }
 

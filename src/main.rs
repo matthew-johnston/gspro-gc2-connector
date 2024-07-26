@@ -2,7 +2,7 @@ use std::io::{self};
 use std::{sync::mpsc::channel, thread, time::Duration};
 
 use clap::{command, Parser};
-use log::{error, info};
+use log::{debug, error, info};
 use spin_sleep::native_sleep;
 
 mod ball_data;
@@ -26,7 +26,11 @@ struct Args {
 }
 
 fn main() {
-    env_logger::init();
+    env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Debug)
+        .format_timestamp(None)
+        .format_module_path(false)
+        .init();
 
     let args = Args::parse();
 
@@ -45,16 +49,34 @@ fn main() {
         &args.com_port, &args.com_baud
     );
 
+    let mut accumulated_data = String::new();
+
     loop {
         match port.read(serial_buf.as_mut_slice()) {
             Ok(t) => {
                 let data = String::from_utf8_lossy(&serial_buf[..t]);
-                if data.starts_with("CT") {
-                    if let Some(data_line) = data_line::DataLine::from_line(&data) {
-                        let ball_event = ball_data::BallData::from(data_line);
-                        sender.send(ball_event).unwrap();
+                accumulated_data.push_str(&data);
+
+                if let Some(pos) = accumulated_data.find('\n') {
+                    let line_to_process = accumulated_data
+                        .drain(..=pos)
+                        .collect::<String>()
+                        .trim_end_matches('\n')
+                        .trim_end_matches('\r')
+                        .to_string();
+
+                    if line_to_process.starts_with("CT") {
+                        debug!("Line to process {:?}", &line_to_process);
+
+                        if let Some(data_line) = data_line::DataLine::from_line(&line_to_process) {
+                            debug!("Parsed data line {:?}", &data_line);
+
+                            let ball_event = ball_data::BallData::from(data_line);
+                            debug!("Sending ball event {:?}", &ball_event);
+
+                            sender.send(ball_event).unwrap();
+                        }
                     }
-                    info!("{}", data);
                 }
             }
             Err(ref e) if e.kind() == io::ErrorKind::TimedOut => (),
@@ -65,13 +87,12 @@ fn main() {
 
 fn open_serial_port(port_name: &str, baud_rate: u32) -> Box<dyn serialport::SerialPort> {
     loop {
-        match serialport::new(port_name, baud_rate)
-            .timeout(Duration::from_millis(10))
-            .stop_bits(serialport::StopBits::One)
-            .parity(serialport::Parity::None)
-            .data_bits(serialport::DataBits::Eight)
-            .open()
-        {
+        info!(
+            "Opening serial port \"{}\" at {} baud",
+            port_name, baud_rate
+        );
+
+        match serialport::new(port_name, baud_rate).open() {
             Ok(p) => return p,
             Err(e) => {
                 error!("Failed to open \"{}\". Error: {}", port_name, e);

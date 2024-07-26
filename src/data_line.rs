@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct DataLine {
     pub ct: u32,
     pub sn: u32,
@@ -62,5 +63,33 @@ impl DataLine {
         }
 
         Some(data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_data_line_from_line() {
+        let line = "CT=1259299,SN=2638,HW=3,SW=4.0.0,ID=2,TM=1259299,SP=8.39,AZ=-6.08,EL=18.88,TS=800.00,SS=-125.00,BS=790.00,CY=0.95,TL=0.95,SM=0.00,HMT=0";
+        let data_line = DataLine::from_line(line).unwrap();
+
+        assert_eq!(data_line.ct, 1259299);
+        assert_eq!(data_line.sn, 2638);
+        assert_eq!(data_line.hw, 3);
+        assert_eq!(data_line.sw, "4.0.0");
+        assert_eq!(data_line.id, 2);
+        assert_eq!(data_line.tm, 1259299);
+        assert_eq!(data_line.sp, 8.39);
+        assert_eq!(data_line.az, -6.08);
+        assert_eq!(data_line.el, 18.88);
+        assert_eq!(data_line.ts, 800.00);
+        assert_eq!(data_line.ss, -125.00);
+        assert_eq!(data_line.bs, 790.00);
+        assert_eq!(data_line.cy, 0.95);
+        assert_eq!(data_line.tl, 0.95);
+        assert_eq!(data_line.sm, 0.00);
+        assert_eq!(data_line.hmt, 0.00);
     }
 }

@@ -2,19 +2,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::data_line::DataLine;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct BallData {
     DeviceID: String, // Hard coded to Foresight GC2
     Units: String,    // Hard coded to Yards
-    ShotNumber: u32,
+    pub ShotNumber: u32,
     APIversion: String, // Hard coded to 1
     BallData: BallDetails,
     ClubData: ClubDetails,
     ShotDataOptions: ShotDataOptions,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct BallDetails {
     Speed: f32,
@@ -27,7 +27,7 @@ pub struct BallDetails {
     CarryDistance: Option<f32>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct ClubDetails {
     Speed: f32,
@@ -42,7 +42,7 @@ pub struct ClubDetails {
     ClosureRate: f32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct ShotDataOptions {
     ContainsBallData: bool, // Hard coded to true

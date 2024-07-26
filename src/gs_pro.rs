@@ -43,6 +43,8 @@ fn handle_connect(address: &String, receiver: &Receiver<BallData>) {
                 handle_read(read_stream);
             });
 
+            let mut last_ball_data_reading: Option<BallData> = None;
+
             // Main loop to handle writing to the stream
             loop {
                 // Check if the read thread has finished, if so, break the loop
@@ -51,6 +53,15 @@ fn handle_connect(address: &String, receiver: &Receiver<BallData>) {
                 }
 
                 if let Ok(ball_event) = receiver.try_recv() {
+                    // Check if the ball event is the same as the last one, if so, skip it
+                    if let Some(ref last_ball_data) = last_ball_data_reading {
+                        if last_ball_data.ShotNumber == ball_event.ShotNumber {
+                            continue;
+                        }
+                    }
+
+                    last_ball_data_reading = Some(ball_event.clone());
+
                     // Convert the ball event to a json string to send to the server
                     if let Ok(ball_json) = serde_json::to_string(&ball_event) {
                         info!("Sending: {}", ball_json);

@@ -27,7 +27,7 @@ struct Args {
 
 fn main() {
     env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Debug)
+        .filter_level(log::LevelFilter::Info)
         .format_timestamp(None)
         .format_module_path(false)
         .init();
